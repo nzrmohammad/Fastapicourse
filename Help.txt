@@ -34,6 +34,10 @@ fastapi dev main.py
 https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 
 Path Parameters
- Query Parameters
+Query Parameters
+
+In short:
+Path Parameters: Used to identify a specific resource. Such as a user ID or a product ID.
+Query Parameters: Used to filter, sort, or paginate a list of resources.
 
 
