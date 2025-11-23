@@ -1,5 +1,7 @@
 python -m virtualenv venv
+
 .\venv\Scripts\activate
+source venv/bin/activate
 
 pip install "fastapi[standard]
 
@@ -38,6 +40,11 @@ Query Parameters
 
 In short:
 Path Parameters: Used to identify a specific resource. Such as a user ID or a product ID.
+/users/{user_id}
+GET /users/5
+
 Query Parameters: Used to filter, sort, or paginate a list of resources.
+/users/?limit=10&sort=name
+
 
 
