@@ -13,8 +13,6 @@ def read_root():
 
 @app.post("/user", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(user: UserRequest):
-    # print(user.model_dump())
-
     if any(u.email == user.email for u in users):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -34,20 +32,31 @@ def get_users():
 
 @app.get("/user/{user_id}", response_model=UserOutput)
 def get_user(user_id: int):
-    user = next((u for u in users if u.id == user_id), None)
-    if not user:
+    existing_user = next((u for u in users if u.id == user_id), None)
+    if not existing_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    return user
+    return existing_user
 
-# @app.get("/user/email/{email}", response_model=UserOutput)
-# def get_user_by_email(email: EmailStr):
-#     user = next((u for u in users if u.email == email), None)
-#     if not user:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="User not found"
-#         )
-#     return user
+@app.put("/user/{user_id}", response_model=UserResponse)
+def update_user(user_id: int, user: UserRequest):
+    existing_user = next((u for u in users if u.id == user_id), None)
+    if not existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    if any(u.email == user.email and u.email != existing_user.email for u in users):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already exists"
+        )
+
+    for key, value in user.model_dump().items():
+        if hasattr(existing_user, key):
+            setattr(existing_user, key, value)
+
+    return {"message": "User updated", "user": existing_user}
