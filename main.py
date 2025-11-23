@@ -1,5 +1,5 @@
 from fastapi import FastAPI, status, HTTPException
-from schemas import UserRequest, UserResponse, UserOutput
+from schemas import UserRequest, UserResponse, UserOutput, UserPatchRequest
 from typing import List
 from pydantic import EmailStr
 
@@ -60,3 +60,34 @@ def update_user(user_id: int, user: UserRequest):
             setattr(existing_user, key, value)
 
     return {"message": "User updated", "user": existing_user}
+
+@app.patch("/user/{user_id}", response_model=UserResponse)
+def patch_user(user_id: int, user: UserPatchRequest):
+    existing_user = next((u for u in users if u.id == user_id), None)
+    if not existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    if any(u.email == user.email and u.email != existing_user.email for u in users):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already exists"
+        )
+
+    for key, value in user.model_dump().items():
+        if hasattr(existing_user, key) and value is not None:
+            setattr(existing_user, key, value)
+
+    return {"message": "User updated", "user": existing_user}
+
+@app.delete("/user/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user_id: int):
+    existing_user = next((u for u in users if u.id == user_id), None)
+    if not existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    users.remove(existing_user)
