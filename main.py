@@ -1,7 +1,7 @@
-from fastapi import FastAPI, status, HTTPException
+from fastapi import FastAPI, status
 from schemas import UserRequest, UserResponse, UserOutput, UserPatchRequest
 from typing import List
-from pydantic import EmailStr
+from exceptions import EmailAlreadyExistsException, UserNotFoundException
 
 app = FastAPI()
 
@@ -14,10 +14,7 @@ def read_root():
 @app.post("/user", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(user: UserRequest):
     if any(u.email == user.email for u in users):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already exists"
-        )
+        raise EmailAlreadyExistsException()
 
     new_user = UserOutput(
         id=len(users) + 1,
@@ -34,26 +31,17 @@ def get_users():
 def get_user(user_id: int):
     existing_user = next((u for u in users if u.id == user_id), None)
     if not existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise UserNotFoundException()
     return existing_user
 
 @app.put("/user/{user_id}", response_model=UserResponse)
 def update_user(user_id: int, user: UserRequest):
     existing_user = next((u for u in users if u.id == user_id), None)
     if not existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise UserNotFoundException()
     
     if any(u.email == user.email and u.email != existing_user.email for u in users):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already exists"
-        )
+        raise EmailAlreadyExistsException()
 
     for key, value in user.model_dump().items():
         if hasattr(existing_user, key):
@@ -65,16 +53,10 @@ def update_user(user_id: int, user: UserRequest):
 def patch_user(user_id: int, user: UserPatchRequest):
     existing_user = next((u for u in users if u.id == user_id), None)
     if not existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise UserNotFoundException()
     
     if any(u.email == user.email and u.email != existing_user.email for u in users):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already exists"
-        )
+        raise EmailAlreadyExistsException()
 
     for key, value in user.model_dump().items():
         if hasattr(existing_user, key) and value is not None:
@@ -86,8 +68,5 @@ def patch_user(user_id: int, user: UserPatchRequest):
 def delete_user(user_id: int):
     existing_user = next((u for u in users if u.id == user_id), None)
     if not existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise UserNotFoundException()
     users.remove(existing_user)
